@@ -1,40 +1,40 @@
 # -*- coding: utf-8 -*-
-... """
-... 多源异构裁判文书结构化提取工具 - 云端部署版
-... 适配：Streamlit Cloud(Linux) + 本地Mac/Windows
-... 支持：DOCX/可编辑PDF/图片型PDF/扫描件/JPG/PNG/TXT
-... 核心：Tesseract OCR(跨平台) + DeepSeek API + Streamlit可视化 + Excel导出
-... 部署：GitHub + Streamlit Cloud | 本地：Mac/Windows直接运行
-... """
-... import streamlit as st
-... import openai
-... import json
-... import traceback
-... from docx import Document
-... import pdfplumber
-... import pandas as pd
-... from pathlib import Path
-... import tempfile
-... from datetime import datetime
-... import pdf2image
-... from PIL import Image
-... import pytesseract
-... import subprocess
-... import sys
-... 
-... # ===== 关键：跨平台适配（本地Mac/Windows + 云端Linux）=====
-... def setup_tesseract():
-...     """
-...     自动检测系统并配置Tesseract：
-...     1. 云端Linux：自动安装Tesseract-OCR+中文包，配置路径
-...     2. 本地Mac：使用brew安装路径（Intel:/usr/local/ | M1/M2:/opt/homebrew/）
-...     3. 本地Windows：需手动安装，默认路径（可自行修改）
-...     """
-...     try:
-...         # 检测系统类型
-...         if sys.platform.startswith('linux'):
-...             # 云端Streamlit Cloud(Linux)：自动安装系统级Tesseract+中文包
-...             subprocess.run(['apt-get', 'update'], check=True, capture_output=True)
+ """
+ 多源异构裁判文书结构化提取工具 - 云端部署版
+ 适配：Streamlit Cloud(Linux) + 本地Mac/Windows
+ 支持：DOCX/可编辑PDF/图片型PDF/扫描件/JPG/PNG/TXT
+ 核心：Tesseract OCR(跨平台) + DeepSeek API + Streamlit可视化 + Excel导出
+ 部署：GitHub + Streamlit Cloud | 本地：Mac/Windows直接运行
+ """
+ import streamlit as st
+ import openai
+ import json
+ import traceback
+ from docx import Document
+ import pdfplumber
+ import pandas as pd
+ from pathlib import Path
+ import tempfile
+ from datetime import datetime
+ import pdf2image
+ from PIL import Image
+ import pytesseract
+ import subprocess
+ import sys
+ 
+ # ===== 关键：跨平台适配（本地Mac/Windows + 云端Linux）=====
+ def setup_tesseract():
+     """
+     自动检测系统并配置Tesseract：
+     1. 云端Linux：自动安装Tesseract-OCR+中文包，配置路径
+     2. 本地Mac：使用brew安装路径（Intel:/usr/local/ | M1/M2:/opt/homebrew/）
+     3. 本地Windows：需手动安装，默认路径（可自行修改）
+     """
+     try:
+         # 检测系统类型
+         if sys.platform.startswith('linux'):
+             # 云端Streamlit Cloud(Linux)：自动安装系统级Tesseract+中文包
+             subprocess.run(['apt-get', 'update'], check=True, capture_output=True)
             subprocess.run(['apt-get', 'install', '-y', 'tesseract-ocr', 'tesseract-ocr-chi-sim', 'poppler-utils'], check=True, capture_output=True)
             # Linux下Tesseract默认路径
             pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
@@ -150,13 +150,13 @@ def read_legal_file(file_path: Path) -> str:
             if pdf_text not in ["PDF无有效文本内容", ""]:
                 return pdf_text
             else:
-                st.warning(f"⚠️ 检测到【{file_path.name}】为图片型PDF（扫描件），启动Tesseract OCR识别...")
+                st.warning(f"⚠️ 检测到【{file_path.name}】为图片型PDF（扫描件），启动Tesseract OCR识别")
                 return tesseract_ocr_scanned_pdf(file_path)
         except:
-            st.warning(f"⚠️ 检测到【{file_path.name}】为图片型PDF（扫描件），启动Tesseract OCR识别...")
+            st.warning(f"⚠️ 检测到【{file_path.name}】为图片型PDF（扫描件），启动Tesseract OCR识别")
             return tesseract_ocr_scanned_pdf(file_path)
     elif file_suffix in [".jpg", ".jpeg", ".png", "bmp"]:
-        st.warning(f"⚠️ 检测到【{file_path.name}】为图片文件，启动Tesseract OCR识别...")
+        st.warning(f"⚠️ 检测到【{file_path.name}】为图片文件，启动Tesseract OCR识别")
         return tesseract_ocr_image(file_path.absolute())
     elif file_suffix == ".txt":
         return read_txt_file(file_path)  # 通用TXT函数，跨平台
@@ -270,7 +270,7 @@ def main():
     if extract_btn:
         st.session_state.result_list.clear()
         total_files = len(uploaded_files)
-        st.info(f"📊 开始批量处理 → 共{total_files}个文件，正在逐份识别/提取...")
+        st.info(f"📊 开始批量处理 → 共{total_files}个文件，正在逐份识别/提取")
         progress_bar = st.progress(0)
         status_text = st.empty()
 
@@ -301,7 +301,7 @@ def main():
                 error_data = {field: "提取失败" for field in REQUIRED_FIELDS}
                 error_data["文件名"] = uploaded_file.name
                 error_data["提取时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                error_data["文书名称"] = f"失败原因：{str(e)[:50]}..."
+                error_data["文书名称"] = f"失败原因：{str(e)[:50]}"
                 st.session_state.result_list.append(error_data)
                 st.error(f"❌ 处理失败：【{uploaded_file.name}】→ {str(e)}")
             finally:
