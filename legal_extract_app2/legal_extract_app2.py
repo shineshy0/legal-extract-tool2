@@ -25,20 +25,14 @@ import sys
 def setup_tesseract():
     """
     自动检测系统并配置Tesseract：
-    1. 本地Mac：用brew安装，自动检测Intel/M1/M2芯片路径
-    2. 云端Linux（Streamlit Cloud）：用apt安装，配置系统级依赖
+    1. 云端Linux：依赖由packages.txt自动安装，直接配置默认路径
+    2. 本地Mac：自动检测Intel/M1/M2芯片路径
     """
     try:
         if sys.platform.startswith('linux'):
-            # 云端Streamlit Cloud（Linux Ubuntu）：自动安装系统级依赖
-            subprocess.run(['apt-get', 'update'], check=True, capture_output=True)
-            subprocess.run([
-                'apt-get', 'install', '-y',
-                'tesseract-ocr', 'tesseract-ocr-chi-sim', 'poppler-utils'
-            ], check=True, capture_output=True)
-            # Linux下Tesseract默认路径
+            # 云端Linux：Tesseract由packages.txt自动安装，默认路径固定
             pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
-            st.toast("✅ 云端Linux Tesseract配置成功", icon="☁️")
+            st.toast("✅ 云端Linux Tesseract配置成功（依赖由packages.txt安装）", icon="☁️")
         elif sys.platform.startswith('darwin'):  # Mac OS
             # 本地Mac：自动检测Intel/M1/M2芯片路径
             try:
@@ -54,7 +48,7 @@ def setup_tesseract():
     except Exception as e:
         if sys.platform.startswith('linux'):
             st.error(f"❌ 云端Linux Tesseract配置失败：{str(e)}")
-            st.info("💡 云端会自动重试，若持续失败请检查代码中的apt命令是否正确")
+            st.info("💡 请检查packages.txt是否包含tesseract-ocr、tesseract-ocr-chi-sim、poppler-utils")
         else:
             st.error(f"❌ 本地Mac Tesseract配置失败：{str(e)}")
             st.info("💡 解决方法：打开Mac终端执行 → brew install tesseract tesseract-lang poppler")
