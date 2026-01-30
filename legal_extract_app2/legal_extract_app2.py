@@ -23,35 +23,26 @@ import sys
 
 # ===== 跨平台适配：Tesseract OCR初始化（本地Mac + 云端Linux）=====
 def setup_tesseract():
-    """
-    自动检测系统并配置Tesseract：
-    1. 云端Linux：依赖由packages.txt自动安装，直接配置默认路径
-    2. 本地Mac：自动检测Intel/M1/M2芯片路径
-    """
     try:
-        if sys.platform.startswith('linux'):
-            # 云端Linux：Tesseract由packages.txt自动安装，默认路径固定
-            pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
-            st.toast("✅ 云端Linux Tesseract配置成功（依赖由packages.txt安装）", icon="☁️")
-        elif sys.platform.startswith('darwin'):  # Mac OS
-            # 本地Mac：自动检测Intel/M1/M2芯片路径
+        # 云端Linux：尝试多个常见路径
+        possible_paths = [
+            '/usr/bin/tesseract',
+            '/usr/local/bin/tesseract',
+            '/opt/homebrew/bin/tesseract'
+        ]
+        for path in possible_paths:
             try:
-                subprocess.run(['/opt/homebrew/bin/tesseract', '--version'], check=True, capture_output=True)
-                pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
-                st.toast("✅ Mac M1/M2芯片 Tesseract配置成功", icon="🍎")
+                pytesseract.pytesseract.tesseract_cmd = path
+                pytesseract.get_tesseract_version()
+                st.toast(f"✅ Tesseract配置成功，路径：{path}", icon="☁️")
+                break
             except:
-                subprocess.run(['/usr/local/bin/tesseract', '--version'], check=True, capture_output=True)
-                pytesseract.pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
-                st.toast("✅ Mac Intel芯片 Tesseract配置成功", icon="🍎")
-        # 验证Tesseract可用
-        pytesseract.get_tesseract_version()
-    except Exception as e:
-        if sys.platform.startswith('linux'):
-            st.error(f"❌ 云端Linux Tesseract配置失败：{str(e)}")
-            st.info("💡 请检查packages.txt是否包含tesseract-ocr、tesseract-ocr-chi-sim、poppler-utils")
+                continue
         else:
-            st.error(f"❌ 本地Mac Tesseract配置失败：{str(e)}")
-            st.info("💡 解决方法：打开Mac终端执行 → brew install tesseract tesseract-lang poppler")
+            raise Exception("未找到Tesseract，请检查packages.txt是否正确")
+    except Exception as e:
+        st.error(f"❌ Tesseract配置失败：{str(e)}")
+        st.info("💡 请确认packages.txt在根目录，且包含tesseract-ocr、tesseract-ocr-chi-sim、poppler-utils")
         sys.exit(1)
 
 # 初始化Tesseract（跨平台适配，启动时自动执行）
