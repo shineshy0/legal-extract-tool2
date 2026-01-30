@@ -21,38 +21,47 @@ import pytesseract
 import subprocess
 import sys
 
-# ===== 核心：Mac跨芯片适配Tesseract OCR（自动检测路径，无需手动修改）=====
-def setup_tesseract_mac():
+# ===== 跨平台适配：Tesseract OCR初始化（本地Mac + 云端Linux）=====
+def setup_tesseract():
     """
-    Mac专属Tesseract配置：
-    1. 自动检测Intel/M1/M2芯片，匹配对应brew安装路径
-    2. 验证Tesseract是否安装，未安装则提示安装命令
-    3. 确保中文识别库可用
+    自动检测系统并配置Tesseract：
+    1. 本地Mac：用brew安装，自动检测Intel/M1/M2芯片路径
+    2. 云端Linux（Streamlit Cloud）：用apt安装，配置系统级依赖
     """
     try:
-        # 先检测M1/M2芯片（opt/homebrew路径），再检测Intel（usr/local路径）
-        try:
-            subprocess.run(['/opt/homebrew/bin/tesseract', '--version'], check=True, capture_output=True)
-            pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
-            chip_type = "M1/M2"
-        except (FileNotFoundError, subprocess.CalledProcessError):
+        if sys.platform.startswith('linux'):
+            # 云端Streamlit Cloud（Linux Ubuntu）：自动安装系统级依赖
+            subprocess.run(['apt-get', 'update'], check=True, capture_output=True)
+            subprocess.run([
+                'apt-get', 'install', '-y',
+                'tesseract-ocr', 'tesseract-ocr-chi-sim', 'poppler-utils'
+            ], check=True, capture_output=True)
+            # Linux下Tesseract默认路径
+            pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+            st.toast("✅ 云端Linux Tesseract配置成功", icon="☁️")
+        elif sys.platform.startswith('darwin'):  # Mac OS
+            # 本地Mac：自动检测Intel/M1/M2芯片路径
             try:
+                subprocess.run(['/opt/homebrew/bin/tesseract', '--version'], check=True, capture_output=True)
+                pytesseract.pytesseract.tesseract_cmd = '/opt/homebrew/bin/tesseract'
+                st.toast("✅ Mac M1/M2芯片 Tesseract配置成功", icon="🍎")
+            except:
                 subprocess.run(['/usr/local/bin/tesseract', '--version'], check=True, capture_output=True)
                 pytesseract.pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
-                chip_type = "Intel"
-            except Exception as e:
-                raise Exception(f"未检测到Tesseract，请先在终端执行：brew install tesseract tesseract-lang")
-        
-        # 验证Tesseract版本和中文库
+                st.toast("✅ Mac Intel芯片 Tesseract配置成功", icon="🍎")
+        # 验证Tesseract可用
         pytesseract.get_tesseract_version()
-        st.toast(f"✅ Tesseract配置成功（Mac {chip_type}芯片）", icon="🔧")
     except Exception as e:
-        st.error(f"❌ Tesseract OCR配置失败：{str(e)}")
-        st.info("💡 解决方法：打开Mac终端，执行命令 → brew install tesseract tesseract-lang")
+        if sys.platform.startswith('linux'):
+            st.error(f"❌ 云端Linux Tesseract配置失败：{str(e)}")
+            st.info("💡 云端会自动重试，若持续失败请检查代码中的apt命令是否正确")
+        else:
+            st.error(f"❌ 本地Mac Tesseract配置失败：{str(e)}")
+            st.info("💡 解决方法：打开Mac终端执行 → brew install tesseract tesseract-lang poppler")
         sys.exit(1)
 
-# 初始化Tesseract（启动工具时自动执行）
-setup_tesseract_mac()
+# 初始化Tesseract（跨平台适配，启动时自动执行）
+setup_tesseract()
 
 # ===== 全局配置（可根据需求增删提取字段）=====
 # 核心法律提取字段，固定11项，适配多数裁判文书
