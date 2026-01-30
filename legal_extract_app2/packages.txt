@@ -1,4 +1,3 @@
-# 系统级依赖：Tesseract OCR+中文包+poppler（PDF转图片工具）
 tesseract-ocr
 tesseract-ocr-chi-sim
 poppler-utils
