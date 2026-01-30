@@ -1,4 +1,4 @@
->>> # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ... """
 ... 多源异构裁判文书结构化提取工具 - 云端部署版
 ... 适配：Streamlit Cloud(Linux) + 本地Mac/Windows
